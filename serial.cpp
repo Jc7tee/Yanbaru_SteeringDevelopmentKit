@@ -8,15 +8,18 @@ bool SerialTW::read(char ch, int data_rx[])
     static int num = -1;
 
     switch (ch) {
-        case 'i':
-            mode = MODE_INIT;
-            break;
-        case 's':
-            mode = MODE_STOP;
-            break;
         case 'c':
+            mode = ACTION_CALIBRATION;
+            break;
+        case 'i':
+            mode = ACTION_IDLE;
+            break;
+        case 'l':
+            mode = ACTION_CLOSEDLOOP;
+            break;
+        case 'p':
+            mode = ACTION_VELOCITY_CTRL;
             read_numbers_flag = true;
-            mode = MODE_CTRL;
             break;
         case ',':
             num ++;
