@@ -16,7 +16,7 @@ RawSerial pc(USBTX, USBRX, 115200);
 SerialTW stw(&pc);
 Serial odrive_serial(PA_9, PA_10, 115200);
 ODriveMbed odrive(odrive_serial);
-LPF lpf_potentio_a(0.1);
+LPF lpf_potentio_a(0.05);
 LPF lpf_potentio_t(0.2);
 
 Timer tm_main;
@@ -133,12 +133,12 @@ int main()
 
             /* sensors */
             float actual_angle_raw = -1 * float(potentio_a.read_u16() - 32768) / 65536.0
-                 * (360.0/436.0) * (360.0 * 10.0) * (52.0/20.0 * 56.0/26.0 * 27.0/270.0) + ANGLE_OFFSET;
+                 * (360.0 * 10.0) * (52.0/20.0 * 70.0/18.0 * 27.0/270.0) + ANGLE_OFFSET;
             float actual_angle_lpf = lpf_potentio_a.pass(actual_angle_raw);
             float target_angle_lpf = 0.0;
 
 #if defined(USE_SELECTOR_SWITCH)
-            float target_angle_raw = float(potentio_t.read_u16() - 32768) / 65536.0 * 360.0 * 2.0;
+            float target_angle_raw = float(potentio_t.read_u16() - 32768) / 65536.0 * 360.0 * 6.0;
             target_angle_lpf = lpf_potentio_t.pass(target_angle_raw);
 
             /* calc mode based on switch */
@@ -215,6 +215,7 @@ int main()
                 _data_tx[4] = selector_switch;
                 _data_tx[5] = initial_steering_offset;
                 _data_tx[6] = int(actual_encoder_pos);
+                _data_tx[7] = potentio_a.read_u16() - 32768;
                 stw.write(_data_tx);
             }
 
