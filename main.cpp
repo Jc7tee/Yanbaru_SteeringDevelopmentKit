@@ -29,8 +29,8 @@ Ticker tk_serial;
 #define VELOCITY_LIMIT 30000.0f
 
 /* debug macro setting */
-// #define USE_SELECTOR_SWITCH
-#define USE_SERIAL_INTERFACE
+#define USE_SELECTOR_SWITCH
+// #define USE_SERIAL_INTERFACE
 
 /* grobal variable */
 int _data_tx[_data_tx_size] = {0};
