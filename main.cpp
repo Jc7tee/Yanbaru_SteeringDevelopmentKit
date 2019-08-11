@@ -29,14 +29,15 @@ Ticker tk_serial;
 #define VELOCITY_LIMIT 30000.0f
 
 /* debug macro setting */
-#define USE_SELECTOR_SWITCH
-// #define USE_SERIAL_INTERFACE
+// #define USE_SELECTOR_SWITCH
+#define USE_SERIAL_INTERFACE
 
 /* grobal variable */
 int _data_tx[_data_tx_size] = {0};
 int _data_rx[_data_rx_size] = {0};
 volatile bool _flagControl = false;
 volatile bool _flagSerialTx = false;
+volatile bool _flagSerialRx_action = false;
 
 
 void IRQ_Control()
@@ -51,6 +52,7 @@ void IRQ_SerialTx()
 
 void IRQ_SerialRx()
 {
+    _flagSerialRx_action = true;
     led = !led;
     char ch = pc.getc();
     stw.read(ch, _data_rx);
@@ -69,7 +71,7 @@ float odrive_action(int action, int motornum, float target_value=0.0)
             requested_state = ODriveMbed::AXIS_STATE_FULL_CALIBRATION_SEQUENCE;
             pc.printf("Axis%d: Requesting State %d\n", motornum, requested_state);
             odrive.run_state(motornum, requested_state, false);
-            wait_ms(15000);
+            // wait_ms(15000);
             pc.printf("Axis%d: Calibrated\n", motornum);
             break;
         case ACTION_IDLE:
@@ -101,12 +103,23 @@ float odrive_action(int action, int motornum, float target_value=0.0)
     return 0.0;
 }
 
+
+float minmax_lim(float value, float min=-1080.0, float max=1080.0)
+{
+    if (value < min)
+        return min;
+    else if (value > max)
+        return max;
+    else
+        return value;
+}
+
 int main()
 {
     tm_main.start();
 
     const float control_cycle_sec = 0.001;
-    const float serialtx_cycle_sec = 0.01;
+    const float serialtx_cycle_sec = 0.02;
     tk_update.attach(&IRQ_Control, control_cycle_sec);
     tk_serial.attach(&IRQ_SerialTx, serialtx_cycle_sec);
 
@@ -117,7 +130,6 @@ int main()
     int time_us_diff = 0;
     int time_us_z1 = 0;
     int selector_switch_z1 = -1;
-    int stw_mode_z1 = -1;
     int selector_switch = -1;
     float actual_encoder_pos = 0.0;
     float initial_steering_offset = 0.0;
@@ -132,13 +144,13 @@ int main()
             time_us_diff = (time_us - time_us_z1)*0.2 + time_us_diff*0.8;
 
             /* sensors */
-            float actual_angle_raw = -1 * float(potentio_a.read_u16() - 32768) / 65536.0
-                 * (360.0 * 10.0) * (52.0/20.0 * 70.0/18.0 * 27.0/270.0) + ANGLE_OFFSET;
+            float actual_angle_raw = minmax_lim(-1.0 * float(potentio_a.read_u16() - 32768) / 65536.0
+                 * (360.0 * 10.0) * (52.0/20.0 * 70.0/18.0 * 27.0/270.0) + ANGLE_OFFSET);
             float actual_angle_lpf = lpf_potentio_a.pass(actual_angle_raw);
             float target_angle_lpf = 0.0;
 
 #if defined(USE_SELECTOR_SWITCH)
-            float target_angle_raw = float(potentio_t.read_u16() - 32768) / 65536.0 * 360.0 * 6.0;
+            float target_angle_raw = minmax_lim(-1.0 * float(potentio_t.read_u16() - 32768) / 65536.0 * 360.0 * 6.0);
             target_angle_lpf = lpf_potentio_t.pass(target_angle_raw);
 
             /* calc mode based on switch */
@@ -193,15 +205,16 @@ int main()
             }
 #elif defined(USE_SERIAL_INTERFACE)
             int motornum = 0;
-            if (stw_mode_z1 != stw.mode)
+            if (stw.mode == ACTION_VELOCITY_CTRL)
             {
-                odrive_action(stw.mode, motornum);
-            }
-            else if (stw.mode == ACTION_VELOCITY_CTRL)
-            {
-                target_angle_lpf = float(_data_rx[0]) / 1000.0;
+                target_angle_lpf = minmax_lim(float(_data_rx[0]) / 1000.0);
                 odrive_action(ACTION_VELOCITY_CTRL, motornum, 
                     -1 * (target_angle_lpf - actual_angle_lpf) * 8192.0/360.0 * 270.0/27.0);
+            }
+            else if (_flagSerialRx_action)
+            {
+                odrive_action(stw.mode, motornum);
+                _flagSerialRx_action = false;
             }
 #endif
             /* serial sending */
@@ -209,20 +222,17 @@ int main()
             {
                 _flagSerialTx = false;
                 _data_tx[0] = stw.mode;
-                _data_tx[1] = _data_rx[0];
-                _data_tx[2] = actual_angle_lpf;
-                _data_tx[3] = target_angle_lpf;
-                _data_tx[4] = selector_switch;
-                _data_tx[5] = initial_steering_offset;
-                _data_tx[6] = int(actual_encoder_pos);
-                _data_tx[7] = potentio_a.read_u16() - 32768;
+                _data_tx[1] = actual_angle_lpf;
+                _data_tx[2] = target_angle_lpf;
+                _data_tx[3] = selector_switch;
+                _data_tx[4] = int(actual_encoder_pos);
+                _data_tx[5] = potentio_a.read_u16() - 32768;
                 stw.write(_data_tx);
             }
 
             /* z1 */
             time_us_z1 = time_us;
             selector_switch_z1 = selector_switch;
-            stw_mode_z1 = stw.mode;
         }
     }
 }
