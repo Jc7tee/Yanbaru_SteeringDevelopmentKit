@@ -28,7 +28,7 @@ Ticker tk_serial;
 #define ANGLE_DIR -1.0f
 #define CURRENT_LIMIT 70.0f
 #define VELOCITY_LIMIT 40000.0f
-#define VELOCITY_GAIN_P 0.5f
+#define VELOCITY_GAIN_P 0.4f
 
 /* debug macro setting */
 // #define USE_SELECTOR_SWITCH
