@@ -25,8 +25,10 @@ Ticker tk_serial;
 
 /* macro setting */
 #define ANGLE_OFFSET +0.0f
+#define ANGLE_DIR -1.0f
 #define CURRENT_LIMIT 70.0f
-#define VELOCITY_LIMIT 30000.0f
+#define VELOCITY_LIMIT 40000.0f
+#define VELOCITY_GAIN_P 0.5f
 
 /* debug macro setting */
 // #define USE_SELECTOR_SWITCH
@@ -198,7 +200,7 @@ int main()
                         odrive_action(ACTION_CLOSEDLOOP, motornum);
                     }
                     odrive_action(ACTION_VELOCITY_CTRL, motornum, 
-                        -1 * (target_angle_lpf - actual_angle_lpf) * 8192.0/360.0 * 270.0/27.0);
+                        ANGLE_DIR * (target_angle_lpf - actual_angle_lpf) * 8192.0/360.0 * 270.0/27.0 * VELOCITY_GAIN_P);
                     break;
                 default:
                     break;
@@ -209,7 +211,7 @@ int main()
             {
                 target_angle_lpf = minmax_lim(float(_data_rx[0]) / 1000.0);
                 odrive_action(ACTION_VELOCITY_CTRL, motornum, 
-                    -1 * (target_angle_lpf - actual_angle_lpf) * 8192.0/360.0 * 270.0/27.0);
+                    ANGLE_DIR * (target_angle_lpf - actual_angle_lpf) * 8192.0/360.0 * 270.0/27.0 * VELOCITY_GAIN_P);
             }
             else if (_flagSerialRx_action)
             {
