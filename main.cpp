@@ -29,6 +29,7 @@ Ticker tk_serial;
 #define CURRENT_LIMIT 70.0f
 #define VELOCITY_LIMIT 40000.0f
 #define VELOCITY_GAIN_P 0.4f
+#define CALIBRATION_CURRENT 10.0f
 
 /* debug macro setting */
 // #define USE_SELECTOR_SWITCH
@@ -68,6 +69,7 @@ float odrive_action(int action, int motornum, float target_value=0.0)
             /* limit */
             odrive_serial.printf("w axis%d.controller.config.vel_limit %f\n",motornum, VELOCITY_LIMIT);
             odrive_serial.printf("w axis%d.motor.config.current_lim %f\n",motornum, CURRENT_LIMIT);
+            odrive_serial.printf("w axis%d.motor.config.calibration_current %f\n",motornum, CALIBRATION_CURRENT);
 
             /* calibration */
             requested_state = ODriveMbed::AXIS_STATE_FULL_CALIBRATION_SEQUENCE;
