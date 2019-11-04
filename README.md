@@ -13,3 +13,7 @@
 - Python 3.6.x
 
 - odrive v3.6
+
+
+### Related Projects
+* [Test Tool](https://github.com/shirokunet/PySerialGamePad)
