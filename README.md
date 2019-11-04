@@ -16,4 +16,4 @@
 
 
 ### Related Projects
-* [Test Tool](https://github.com/shirokunet/PySerialGamePad)
+* [PySerialGamePad](https://github.com/shirokunet/PySerialGamePad)
