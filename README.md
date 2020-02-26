@@ -16,4 +16,4 @@
 
 
 ### Related Projects
-* [PySerialGamePad](https://github.com/shirokunet/PySerialGamePad)
+* [Yanbaru_SteeringDevelopmentKit_GamePadExample](https://github.com/shirokunet/Yanbaru_SteeringDevelopmentKit_GamePadExample)
